@@ -7,17 +7,17 @@ export interface EntityProps {
 }
 
 export class Entity {
-  properties: EntityPropertyMap;
+  coreProperties: EntityPropertyMap;
 
   constructor(props: EntityProps) {
-    this.properties = props.propertyMap || new EntityPropertyMap(new Map());
+    this.coreProperties = props.propertyMap || new EntityPropertyMap(new Map());
     this.handleCreationMode(props.creationMode || EntityCreationMode.random);
   }
 
   handleCreationMode(creationMode: string) {
     switch (creationMode) {
       case EntityCreationMode.random: {
-        this.properties.generateRandomProperties();
+        this.coreProperties.generateRandomProperties();
         break;
       }
       default:
@@ -26,6 +26,6 @@ export class Entity {
   }
 
   getDescription() {
-    return this.properties.getReadableDescription();
+    return this.coreProperties.getReadableDescription();
   }
 }

@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   entry: './src/index.tsx',
@@ -31,7 +32,10 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {
-      process: require.resolve('process/browser')
+      process: require.resolve('process/browser'),
+      path: require.resolve('path-browserify'),
+      os: require.resolve('os-browserify/browser'),
+      crypto: require.resolve('crypto-browserify')
     }
   },
   plugins: [
@@ -43,7 +47,8 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY)
-    })
+    }),
+    new Dotenv()  // This will load variables from .env file into process.env
   ],
   devServer: {
     static: {
@@ -57,6 +62,6 @@ module.exports = {
     open: true, // Automatically open the browser
     hot: true, // Enable hot module replacement
   },
-  stats: 'errors-only',  // Output only errors to the console, no other stats,
+  stats: 'errors-only',  // Output only errors to the console, no other stats
   devtool: 'source-map', // This is for production
 };

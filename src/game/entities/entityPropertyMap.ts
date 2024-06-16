@@ -1,5 +1,5 @@
 import { EntityProperty, EntityPropertyDefaults } from "./types";
-import { getRandomInteger } from "../utils";
+import { getRandomInteger } from "../../utils";
 
 export class EntityPropertyMap {
   properties: Map<EntityProperty, string>;
