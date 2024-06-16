@@ -1,27 +1,35 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import Phaser from 'phaser';
-import { ChatGPTClient } from './services';
+import { ChatGPTClient, ServiceLocator } from './services';
 import { GPT_IMAGE_MODELS } from './services/chatGPT';
 import { Entity } from './game/entities/entity';
 import { OpenAIProvider, openai } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
 import * as dotenv from 'dotenv';
+import { CardScene } from './game/scenes';
 
 dotenv.config();
-let initialized = false;
+
+const CoreServiceLocator = new ServiceLocator();
+
+export const OPEN_AI_SERVICE_NAME = 'OpenAIService';
 
 class MainGame extends Phaser.Scene {
-  openai: OpenAIProvider;
+  openai: { [key: string]: OpenAIProvider };
   openaiImage: ChatGPTClient;
+  serviceLocator: ServiceLocator;
 
   constructor() {
     super('MainGame');
-    this.openai = createOpenAI({
+    this.serviceLocator = CoreServiceLocator;
+    this.openai = { [OPEN_AI_SERVICE_NAME]: createOpenAI({
       compatibility: 'strict',
       apiKey: process.env.OPENAI_API_KEY,
-    });
-    this.openaiImage = new ChatGPTClient(process.env.OPENAI_API_KEY);
+    })};
+    this.serviceLocator.addService(this.openai);
+    this.openaiImage = new ChatGPTClient(this.serviceLocator, process.env.OPENAI_API_KEY);
+
   }
 
   preload() {
@@ -30,8 +38,6 @@ class MainGame extends Phaser.Scene {
       console.log('preload');
       const test = await this.openaiImage.genImage(GPT_IMAGE_MODELS.best, `An entity that has the following properties: ${entity.getDescription()}`);
       console.log(test);
-      // const test2 = await this.chatGPTService.sendMessage(ENTITY_PROPERTIES_PROMPT);
-      // console.log(test2);
     })();
   }
 
@@ -55,7 +61,6 @@ const App = () => {
     return () => {
       game.destroy(true);
     };
-    return null;
   }, []);
 
   return <div>

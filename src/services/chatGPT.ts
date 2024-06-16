@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
 import { IMAGE_BASE_PROMPT } from '../prompts/images';
+import { ServiceLocator } from './serviceLocator';
+import { InjectableService } from './injectableService';
 
 export const GPT_VISION_RESOLUTION = 1024;
 export const GPT_TEXT_MODELS: { [key: string]: GPTModel } = {
@@ -15,12 +17,14 @@ export const GPT_IMAGE_MODELS: { [key: string]: GPTModel } = {
 
 export type GPTModel = 'gpt-4o' | 'gpt-4-turbo' | 'dall-e-2' | 'dall-e-3' | 'gpt-4-turbo-preview';
 
-
-export class ChatGPTClient {
+export const GPT_SERVICE_NAME = 'ChatGPTImageService';
+export class ChatGPTClient extends InjectableService {
   private client: OpenAI;
   private image_context: string[];
 
-  constructor(apiKey: string) {
+  constructor(serviceLocator: ServiceLocator, apiKey: string) {
+    super(serviceLocator, GPT_SERVICE_NAME);
+
     console.log('Creating ChatGPTClient');
     this.client = new OpenAI({
       apiKey,
