@@ -1,5 +1,5 @@
 import { ChatGPTClient } from "./chatGPT";
-import { InjectableService } from "./injectableService";
+import { InjectableService, InjectableServiceInstance } from "./injectableService";
 
 export const ServiceName = {
   [ChatGPTClient.name]: ChatGPTClient.name,
@@ -7,21 +7,23 @@ export const ServiceName = {
 
 export type TServiceName = keyof typeof ServiceName;
 
-export type ServiceInstance = InstanceType<typeof InjectableService>;
-
 export class ServiceLocator {
-  private services: { [key: TServiceName]: ServiceInstance };
+  private services: { [key: TServiceName]: InjectableService };
 
   constructor() {
-      this.services = {};
+    this.services = {};
   }
 
-  addService(instance: ServiceInstance) {
-      this.services[instance.name] = instance;
-      this.services[instance.name].serviceLocator = this;
+  addService<T>(service: { serviceKey: string, serviceValue: any }): T {
+    service.serviceValue.serviceName = service.serviceKey;
+    service.serviceValue.serviceLocator = this;
+
+    this.services[service.serviceKey] = service.serviceValue;
+
+    return service.serviceValue;
   }
 
-  getService(name: TServiceName): ServiceInstance {
-      return this.services[name];
+  getService<T>(name: TServiceName): T {
+    return this.services[name] as unknown as T;
   }
 }

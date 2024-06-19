@@ -51,7 +51,7 @@ export class ChatGPTClient extends InjectableService {
         n: 1,
         size: GPT_IMAGE_GEN_RESOLUTION,
       });
-      image_url = response.data[0].url;
+      image_url = response.data[0].url || 'No result :(';
     } catch (error) {
       console.error('Error generating image:', error);
       return 'Error processing your request.';

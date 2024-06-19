@@ -2,10 +2,19 @@ import { ServiceLocator } from "./serviceLocator";
 
 export class InjectableService {
   serviceLocator: ServiceLocator;
-  name: string;
+  serviceName: string;
 
-  constructor(serviceLocator: ServiceLocator, name: string) {
+  constructor(serviceLocator: ServiceLocator, serviceName: string) {
     this.serviceLocator = serviceLocator;
-    this.name = name;
+    this.serviceName = serviceName;
+  }
+}
+
+export class InjectableServiceInstance<T> extends InjectableService {
+  service: any;
+
+  constructor(serviceLocator: ServiceLocator, serviceName: string, service: any) {
+    super(serviceLocator, serviceName);
+    this.service = service;
   }
 }

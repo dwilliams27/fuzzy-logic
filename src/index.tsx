@@ -7,29 +7,31 @@ import { Entity } from './game/entities/entity';
 import { OpenAIProvider, openai } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
 import * as dotenv from 'dotenv';
-import { CardScene } from './game/scenes';
+import { OPEN_AI_SERVICE_NAME } from './utils/constants';
 
 dotenv.config();
 
 const CoreServiceLocator = new ServiceLocator();
 
-export const OPEN_AI_SERVICE_NAME = 'OpenAIService';
-
 class MainGame extends Phaser.Scene {
-  openai: { [key: string]: OpenAIProvider };
+  openai: OpenAIProvider;
   openaiImage: ChatGPTClient;
   serviceLocator: ServiceLocator;
 
   constructor() {
     super('MainGame');
     this.serviceLocator = CoreServiceLocator;
-    this.openai = { [OPEN_AI_SERVICE_NAME]: createOpenAI({
-      compatibility: 'strict',
-      apiKey: process.env.OPENAI_API_KEY,
-    })};
-    this.serviceLocator.addService(this.openai);
-    this.openaiImage = new ChatGPTClient(this.serviceLocator, process.env.OPENAI_API_KEY);
-
+    this.openai = this.serviceLocator.addService<OpenAIProvider>({
+      serviceKey: OPEN_AI_SERVICE_NAME,
+      serviceValue: createOpenAI({
+        compatibility: 'strict',
+        apiKey: process.env.OPENAI_API_KEY,
+      }),
+    });
+    this.openaiImage = this.serviceLocator.addService<ChatGPTClient>({
+      serviceKey: OPEN_AI_SERVICE_NAME,
+      serviceValue: new ChatGPTClient(this.serviceLocator, process.env.OPENAI_API_KEY || ''),
+    });
   }
 
   preload() {
@@ -70,5 +72,11 @@ const App = () => {
 };
 
 // Create a root container
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+try {
+  // @ts-ignore
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+} catch (Exception) {
+  console.error('Error rendering root:', Exception);
+}
+

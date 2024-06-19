@@ -28,6 +28,7 @@ export class EntityPropertyMap {
 
   generateRandomProperties(): void {
     this.properties = Object.fromEntries(
+      // @ts-ignore
       Object.keys(EntityPropertyDefaults).map((prop: EntityProperty) => {
         return [prop, EntityPropertyDefaults[prop][getRandomInteger(EntityPropertyDefaults[prop].length - 1)]];
       })
