@@ -2,44 +2,55 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import Phaser from 'phaser';
 import { ChatGPTClient, ServiceLocator } from './services';
-import { GPT_IMAGE_MODELS } from './services/chatGPT';
+import { GPT_IMAGE_MODELS, GPT_SERVICE_NAME } from './services/chatGPT';
 import { Entity } from './game/entities/entity';
 import { OpenAIProvider, openai } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
 import * as dotenv from 'dotenv';
 import { OPEN_AI_SERVICE_NAME } from './utils/constants';
+import { MrPresidentScenario } from './services/scenarios/mrPresident';
 
 dotenv.config();
 
 const CoreServiceLocator = new ServiceLocator();
 
 class MainGame extends Phaser.Scene {
-  openai: OpenAIProvider;
+  openai: any;
   openaiImage: ChatGPTClient;
   serviceLocator: ServiceLocator;
 
   constructor() {
     super('MainGame');
     this.serviceLocator = CoreServiceLocator;
-    this.openai = this.serviceLocator.addService<OpenAIProvider>({
+    this.openai = this.serviceLocator.addService<any>({
       serviceKey: OPEN_AI_SERVICE_NAME,
       serviceValue: createOpenAI({
         compatibility: 'strict',
         apiKey: process.env.OPENAI_API_KEY,
-      }),
+      })('gpt-4o'),
     });
     this.openaiImage = this.serviceLocator.addService<ChatGPTClient>({
-      serviceKey: OPEN_AI_SERVICE_NAME,
+      serviceKey: GPT_SERVICE_NAME,
       serviceValue: new ChatGPTClient(this.serviceLocator, process.env.OPENAI_API_KEY || ''),
     });
+
+    const mrPresidentScenario = new MrPresidentScenario(this.serviceLocator);
+    mrPresidentScenario.loadAgentInstructions({
+      TOPIC: 'doing some sketchy stuff',
+      MIN_SHOT: '5',
+      MAX_SHOT: '10',
+      GOAL_POSITIVE: `I will sign the bill into law.`,
+      GOAL_NEGATIVE: 'I will not sign the bill into law.'
+    });
+    mrPresidentScenario.advanceScenario('Sir, I think it is time to sign the bill.');
   }
 
   preload() {
     (async () => {
       const entity = new Entity({});
       console.log('preload');
-      const test = await this.openaiImage.genImage(GPT_IMAGE_MODELS.best, `An entity that has the following properties: ${entity.getDescription()}`);
-      console.log(test);
+      // const test = await this.openaiImage.genImage(GPT_IMAGE_MODELS.best, `An entity that has the following properties: ${entity.getDescription()}`);
+      // console.log(test);
     })();
   }
 

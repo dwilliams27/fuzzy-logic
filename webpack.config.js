@@ -12,11 +12,6 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: 'ts-loader',
-        exclude: /node_modules/
-      },
-      {
         test: /\.mjs$/,
         include: /node_modules/,
         type: "javascript/auto"
@@ -26,6 +21,11 @@ module.exports = {
         resolve: {
           fullySpecified: false,
         },
+      },
+      {
+        test: /\.(ts|tsx)$/,
+        use: 'swc-loader',
+        exclude: /node_modules/,
       },
     ]
   },

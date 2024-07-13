@@ -13,4 +13,13 @@ export class BaseScene extends Phaser.Scene {
       this.add.image(400, 300, 'dynamicImage').setScale(0.5);
     };
   }
+
+  preload() {
+    this.load.image('background', 'assets/background.png');
+  }
+
+  create() {
+    this.add.image(400, 300, 'background');
+    this.scene.launch('UiScene');
+  }
 }

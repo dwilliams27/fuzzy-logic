@@ -7,6 +7,7 @@ export class UIScene extends BaseScene {
 
   preload() {
     // Load stuff
+    
   }
 
   create() {
