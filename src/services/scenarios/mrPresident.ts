@@ -10,12 +10,11 @@ export const MR_PRESIDENT_RAW_PROMPT = `You are the president of the United Stat
     your decision and think carefully about what your vice president is suggesting. 
     You frequently disagree with him, and have a long complicated history of an 
     uneasy alliance. You must wait until you have heard at least {MIN_SHOT} 
-    messages from him to come to a decision. You can wait no longer than 
-    {MAX_SHOT} messages to decide. Think of the writings of Winston Churchill,
+    messages from him to come to a decision. After {MAX_SHOT} messages, you
+    must give your answer and output exactly {GOAL_POSITIVE} if you will sign,
+    and {GOAL_NEGATIVE} if you are not convinced. Think of the writings of Winston Churchill,
     Abraham Lincoln, and Donald Trump when crafting your replies. Be sure to be
-    stubborn. 
-    When you have decided, you must output EXACTLY the text {GOAL_POSITIVE}
-    if you want to sign it, or {GOAL_NEGATIVE} if you are not convinced.`;
+    stubborn.`;
 export const MR_PRESIDENT_VARIABLES = ['TOPIC', 'MIN_SHOT', 'MAX_SHOT', 'GOAL_POSITIVE', 'GOAL_NEGATIVE'] as const;
 export class MrPresidentScenario extends Scenario<typeof MR_PRESIDENT_VARIABLES[number]> {
   constructor(serviceLocator: ServiceLocator) {

@@ -37,10 +37,10 @@ class MainGame extends Phaser.Scene {
     const mrPresidentScenario = new MrPresidentScenario(this.serviceLocator);
     mrPresidentScenario.loadAgentInstructions({
       TOPIC: 'doing some sketchy stuff',
-      MIN_SHOT: '5',
-      MAX_SHOT: '10',
-      GOAL_POSITIVE: `I will sign the bill into law.`,
-      GOAL_NEGATIVE: 'I will not sign the bill into law.'
+      MIN_SHOT: '2',
+      MAX_SHOT: '3',
+      GOAL_POSITIVE: `I WILL SIGN`,
+      GOAL_NEGATIVE: 'I WILL NOT SIGN'
     });
     mrPresidentScenario.advanceScenario('Sir, I think it is time to sign the bill.');
   }
