@@ -7,8 +7,10 @@ import { Entity } from './game/entities/entity';
 import { OpenAIProvider, openai } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
 import * as dotenv from 'dotenv';
-import { OPEN_AI_SERVICE_NAME } from './utils/constants';
-import { MrPresidentScenario } from './services/scenarios/mrPresident';
+import { GAME_HEIGHT, GAME_WIDTH, OPEN_AI_SERVICE_NAME } from './utils/constants';
+import { MR_PRESIDENT_SERVICE_NAME, MrPresidentScenario } from './services/scenarios/mrPresident';
+import { UIScene, UI_SCENE_KEY } from './game/scenes/uiScene';
+import ScrollableText from './game/ui/messageHistory';
 
 dotenv.config();
 
@@ -34,7 +36,10 @@ class MainGame extends Phaser.Scene {
       serviceValue: new ChatGPTClient(this.serviceLocator, process.env.OPENAI_API_KEY || ''),
     });
 
-    const mrPresidentScenario = new MrPresidentScenario(this.serviceLocator);
+    const mrPresidentScenario = this.serviceLocator.addService<MrPresidentScenario>({
+      serviceKey: MR_PRESIDENT_SERVICE_NAME,
+      serviceValue: new MrPresidentScenario(this.serviceLocator),
+    });
     mrPresidentScenario.loadAgentInstructions({
       TOPIC: 'doing some sketchy stuff',
       MIN_SHOT: '2',
@@ -42,29 +47,23 @@ class MainGame extends Phaser.Scene {
       GOAL_POSITIVE: `I WILL SIGN`,
       GOAL_NEGATIVE: 'I WILL NOT SIGN'
     });
-    mrPresidentScenario.advanceScenario('Sir, I think it is time to sign the bill.');
   }
 
   preload() {
-    (async () => {
-      const entity = new Entity({});
-      console.log('preload');
-      // const test = await this.openaiImage.genImage(GPT_IMAGE_MODELS.best, `An entity that has the following properties: ${entity.getDescription()}`);
-      // console.log(test);
-    })();
+    
   }
 
   create() {
-    // Create game entities
+    this.scene.launch(UI_SCENE_KEY, { serviceLocator: this.serviceLocator });
   }
 }
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'root',
-  width: 800,
-  height: 600,
-  scene: [MainGame]
+  width: GAME_WIDTH,
+  height: GAME_HEIGHT,
+  scene: [MainGame, UIScene]
 };
 
 const App = () => {
