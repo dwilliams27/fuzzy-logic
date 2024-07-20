@@ -7,6 +7,10 @@ export class InjectableService {
   constructor(serviceLocator: ServiceLocator, serviceName: string) {
     this.serviceLocator = serviceLocator;
     this.serviceName = serviceName;
+    this.serviceLocator.addService<unknown>({
+      serviceKey: serviceName,
+      serviceValue: this,
+    });
     console.log(`Created InjectableService: ${serviceName}`);
   }
 }

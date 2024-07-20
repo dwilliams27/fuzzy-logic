@@ -1,10 +1,8 @@
 import { CoreMessage } from "ai";
-import { ScenarioMessage } from "../../services/scenarios/scenario";
 
-export default class ScrollableText extends Phaser.GameObjects.Container {
-  scrollY: number;
-  curHeight: number;
-  messages: ScenarioMessage[] = [];
+export default class PromptBox extends Phaser.GameObjects.Container {
+  currentRawPrompt: string;
+  
 
   constructor(scene: Phaser.Scene, x: number, y: number, width: number, height: number, messages: CoreMessage[]) {
     super(scene, x, y);
@@ -51,7 +49,7 @@ export default class ScrollableText extends Phaser.GameObjects.Container {
     this.y = this.scrollY;
   }
 
-  postMessage(message: ScenarioMessage) {
+  postMessage(message: CoreMessage) {
     this.messages.push(message);
 
     // Add the new message to the container

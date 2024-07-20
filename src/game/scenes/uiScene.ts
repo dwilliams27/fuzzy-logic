@@ -25,7 +25,7 @@ export class UIScene extends BaseScene {
   init(data: UISceneData) {
     console.log(data.serviceLocator);
     this.serviceLocator = data.serviceLocator;
-    this.activeScenario = this.serviceLocator?.getService<Scenario<MrPresident>>(MR_PRESIDENT_SERVICE_NAME) || null;
+    this.activeScenario = this.serviceLocator?.getScenarios()[0] || null;
     this.activeScenario?.subscribeToEvents(this.handleScenarioEvent.bind(this));
   }
 
@@ -37,6 +37,8 @@ export class UIScene extends BaseScene {
     this.add.text(5, 30, 'Start Scenario', { font: '16px Arial', color: '#00ff00' })
       .setInteractive()
       .on('pointerdown', () => {
+        console.log('Starting');
+        console.log(this.activeScenario);
         this.activeScenario?.advanceScenario('Sir, I think it is time to sign the bill.');
       });
 

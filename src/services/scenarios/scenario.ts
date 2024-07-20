@@ -16,6 +16,13 @@ export enum ScenarioStatus {
   COMPLETED = 'COMPLETED',
 }
 
+export enum ScenarioType {
+  Message = 'Message',
+  Meta = 'Meta',
+}
+
+export type ScenarioMessage = { role: string, content: string };
+
 export interface ScenarioSubscription {
   newEvent: (event: ScenarioEvent) => void;
   unsubscribe: () => void;
@@ -24,6 +31,7 @@ export interface ScenarioSubscription {
 export class Scenario<T extends string> extends InjectableService implements PromptTemplate<T> {
   private openaiService: any;
   private status = ScenarioStatus.IN_PROGRESS;
+  private processedPrompt: string = '';
   private instructions: string = '';
   private scenarioConfig: Record<string, string> = {};
   private mtgInstructions: string = '';
@@ -37,7 +45,8 @@ export class Scenario<T extends string> extends InjectableService implements Pro
    NUM_WORDS: '5',
   }
   private generatedMessageTemplates: string[][] = [];
-  private messages: CoreMessage[] = [];
+  private messages: ScenarioMessage[] = [];
+  private aiMessages: CoreMessage[] = [];
   private subscriptions: ScenarioSubscription[] = [];
   private nounBank: WordBank = {
     common: [],
@@ -58,8 +67,14 @@ export class Scenario<T extends string> extends InjectableService implements Pro
     bankType: WordType.ADJECTIVE
   };
 
-  constructor(serviceLocator: ServiceLocator, serviceName: string, public rawPrompt: string, public readonly variables: T[]) {
-    super(serviceLocator, serviceName);
+  constructor(
+    serviceLocator: ServiceLocator,
+    serviceName: string,
+    public rawPrompt: string,
+    public readonly variables: T[],
+    public readonly type: ScenarioType = ScenarioType.Message
+  ) {
+    super(serviceLocator, `SCENARIO_${serviceName}`);
     this.openaiService = serviceLocator.getService(OPEN_AI_SERVICE_NAME);
   }
 
@@ -68,6 +83,8 @@ export class Scenario<T extends string> extends InjectableService implements Pro
     this.instructions = this.processTemplate(this, values);
     this.mtgInstructions = this.processTemplate({ rawPrompt: MTG_SYSTEM_PROMPT_RAW, variables: MTG_SYSTEM_PROMPT_VARIABLES as any }, this.mtgConfig);
     this.wbInstructions = this.processTemplate({ rawPrompt: WB_SYSTEM_PROMPT_RAW, variables: WB_SYSTEM_PROMPT_VARIABLES as any }, this.wbConfig);
+
+    this.processedPrompt = this.processTemplate({ rawPrompt: this.rawPrompt, variables: this.variables }, values);
   }
 
   processTemplate(template: PromptTemplate<T>, values: { [key: string]: string }) {
@@ -81,7 +98,7 @@ export class Scenario<T extends string> extends InjectableService implements Pro
     const result = await streamText({
       model: this.openaiService,
       system: this.mtgInstructions,
-      messages: this.messages,
+      messages: this.aiMessages,
     });
 
     const resultText = await result.toTextStreamResponse().text();
@@ -94,7 +111,7 @@ export class Scenario<T extends string> extends InjectableService implements Pro
     const result = await streamText({
       model: this.openaiService,
       system: this.wbInstructions,
-      messages: [...this.messages, { role: 'user', content: this.generatedMessageTemplates[this.generatedMessageTemplates.length - 1].join('\n') }]
+      messages: [...this.aiMessages, { role: 'user', content: this.generatedMessageTemplates[this.generatedMessageTemplates.length - 1].join('\n') }]
     });
 
     const resultText: WordBankTypedResponse = JSON.parse(await result.toTextStreamResponse().text());
@@ -105,16 +122,35 @@ export class Scenario<T extends string> extends InjectableService implements Pro
 
   async advanceScenario(nextMessage: string) {
     console.log('Advancing scenario...');
-    this.postMessage({ role: 'user', content: nextMessage });
+    let resultText = '';
+    switch (this.type) {
+      case ScenarioType.Message: {
+        this.postMessage({ role: 'user', content: nextMessage });
 
-    const result = await streamText({
-      model: this.openaiService,
-      system: this.instructions,
-      messages: this.messages,
-    });
-  
-    const resultText = await result.toTextStreamResponse().text();
-    this.postMessage({ role: 'assistant', content: resultText });
+        const result = await streamText({
+          model: this.openaiService,
+          system: this.instructions,
+          messages: this.aiMessages,
+          temperature: 0.9,
+        });
+    
+        resultText = await result.toTextStreamResponse().text();
+        this.postMessage({ role: 'assistant', content: resultText });
+        break;
+      }
+      case ScenarioType.Meta: {
+        const result = await streamText({
+          model: this.openaiService,
+          system: this.instructions,
+          prompt: this.processedPrompt,
+          temperature: 0.9,
+        });
+        resultText = await result.toTextStreamResponse().text();
+        this.postMessage({ role: 'result', content: resultText });
+        break;
+      }
+      default: {}
+    }
 
     if (resultText.includes(this.scenarioConfig['GOAL_POSITIVE']) || resultText.includes(this.scenarioConfig['GOAL_NEGATIVE'])) {
       this.status = ScenarioStatus.COMPLETED;
@@ -173,11 +209,9 @@ export class Scenario<T extends string> extends InjectableService implements Pro
   }
 
   logGameState() {
-    console.log(this.messages.map((msg) => `${msg.role}: ${msg.content}`).join('\n'));
-    // console.log(this.generatedMessageTemplates);
-    // console.log(this.nounBank);
-    // console.log(this.verbBank);
-    // console.log(this.adjectiveBank);
+    this.messages.forEach((msg) => {
+      console.log(`${msg.role}: ${msg.content}`);
+    });
   }
 
   parseWordBankResponse(res: WordBankTypedResponse) {
@@ -212,8 +246,15 @@ export class Scenario<T extends string> extends InjectableService implements Pro
     this.subscriptions.forEach((sub) => sub.newEvent(event));
   }
 
-  postMessage(message: CoreMessage) {
-    this.messages.push(message);
+  postMessage(message: CoreMessage | ScenarioMessage) {
+    if (message.role === 'system'
+      || message.role === 'user'
+      || message.role === 'assistant'
+      || message.role === 'tool'
+    ) {
+      this.aiMessages.push(message as CoreMessage);
+    }
+    this.messages.push(message as ScenarioMessage);
     console.log(`Posted message: ${message.role} - ${message.content}`);
     this.emitEvent(new MessagePostedEvent());
   }
